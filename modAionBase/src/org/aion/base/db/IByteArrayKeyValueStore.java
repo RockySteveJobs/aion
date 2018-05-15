@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2017-2018 Aion foundation.
  *
  *     This file is part of the aion network project.
@@ -35,4 +35,23 @@
 package org.aion.base.db;
 
 public interface IByteArrayKeyValueStore extends IKeyValueStore<byte[], byte[]> {
+
+    /**
+     * Deletes all the keys from the current data store that are not present in the data store given
+     * as parameter.
+     *
+     * @param db a data store with keys that must be excluded by the deletion call
+     * @return the number of deleted keys
+     */
+    long deleteAllExcept(IByteArrayKeyValueStore db);
+
+    /**
+     * Deletes all the explored keys from the current data store that are not present in the data
+     * store given as parameter.
+     *
+     * @param db a data store with keys that must be excluded by the deletion call
+     * @param limit number of keys to search though before stopping
+     * @return the number of deleted keys
+     */
+    long deleteAllExcept(IByteArrayKeyValueStore db, long limit);
 }

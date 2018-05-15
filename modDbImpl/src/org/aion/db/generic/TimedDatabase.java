@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2017-2018 Aion foundation.
  *
  *     This file is part of the aion network project.
@@ -28,16 +28,16 @@
  ******************************************************************************/
 package org.aion.db.generic;
 
-import org.aion.base.db.IByteArrayKeyValueDatabase;
-import org.aion.base.util.Hex;
-import org.aion.log.AionLoggerFactory;
-import org.aion.log.LogEnum;
-import org.slf4j.Logger;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.aion.base.db.IByteArrayKeyValueDatabase;
+import org.aion.base.db.IByteArrayKeyValueStore;
+import org.aion.base.util.Hex;
+import org.aion.log.AionLoggerFactory;
+import org.aion.log.LogEnum;
+import org.slf4j.Logger;
 
 /**
  * Times different database operations and logs the time.
@@ -48,6 +48,7 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
 
     /** Unlocked database. */
     protected final IByteArrayKeyValueDatabase database;
+
     protected static final Logger LOG = AionLoggerFactory.getLogger(LogEnum.DB.name());
 
     public TimedDatabase(IByteArrayKeyValueDatabase _database) {
@@ -59,7 +60,8 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         return this.getClass().getSimpleName() + " over " + database.toString();
     }
 
-    // IDatabase functionality -----------------------------------------------------------------------------------------
+    // IDatabase functionality
+    // -----------------------------------------------------------------------------------------
 
     @Override
     public boolean open() {
@@ -164,7 +166,8 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         return result;
     }
 
-    // IKeyValueStore functionality ------------------------------------------------------------------------------------
+    // IKeyValueStore functionality
+    // ------------------------------------------------------------------------------------
 
     @Override
     public boolean isEmpty() {
@@ -192,7 +195,13 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         Optional<byte[]> value = database.get(key);
         long t2 = System.nanoTime();
 
-        LOG.debug(database.toString() + " get(key) in " + (t2 - t1) + " ns." + "\n\t\t\t\t\tkey = " + Hex.toHexString(key));
+        LOG.debug(
+                database.toString()
+                        + " get(key) in "
+                        + (t2 - t1)
+                        + " ns."
+                        + "\n\t\t\t\t\tkey = "
+                        + Hex.toHexString(key));
         return value;
     }
 
@@ -202,8 +211,15 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         database.put(key, value);
         long t2 = System.nanoTime();
 
-        LOG.debug(database.toString() + " put(key,value) in " + (t2 - t1) + " ns." + "\n\t\t\t\t\tkey = " + Hex.toHexString(key)
-                          + "\n\t\t\t\t\tvalue = " + Hex.toHexString(value));
+        LOG.debug(
+                database.toString()
+                        + " put(key,value) in "
+                        + (t2 - t1)
+                        + " ns."
+                        + "\n\t\t\t\t\tkey = "
+                        + Hex.toHexString(key)
+                        + "\n\t\t\t\t\tvalue = "
+                        + Hex.toHexString(value));
     }
 
     @Override
@@ -212,7 +228,13 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         database.delete(key);
         long t2 = System.nanoTime();
 
-        LOG.debug(database.toString() + " delete(key) in " + (t2 - t1) + " ns." + "\n\t\t\t\t\tkey = " + Hex.toHexString(key));
+        LOG.debug(
+                database.toString()
+                        + " delete(key) in "
+                        + (t2 - t1)
+                        + " ns."
+                        + "\n\t\t\t\t\tkey = "
+                        + Hex.toHexString(key));
     }
 
     @Override
@@ -221,7 +243,13 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         database.putBatch(keyValuePairs);
         long t2 = System.nanoTime();
 
-        LOG.debug(database.toString() + " putBatch(" + keyValuePairs.size() + ") in " + (t2 - t1) + " ns.");
+        LOG.debug(
+                database.toString()
+                        + " putBatch("
+                        + keyValuePairs.size()
+                        + ") in "
+                        + (t2 - t1)
+                        + " ns.");
     }
 
     @Override
@@ -230,8 +258,15 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         database.putToBatch(key, value);
         long t2 = System.nanoTime();
 
-        LOG.debug(database.toString() + " putToBatch(key,value) in " + (t2 - t1) + " ns." + "\n\t\t\t\t\tkey = " + Hex
-                .toHexString(key) + "\n\t\t\t\t\tvalue = " + Hex.toHexString(value));
+        LOG.debug(
+                database.toString()
+                        + " putToBatch(key,value) in "
+                        + (t2 - t1)
+                        + " ns."
+                        + "\n\t\t\t\t\tkey = "
+                        + Hex.toHexString(key)
+                        + "\n\t\t\t\t\tvalue = "
+                        + Hex.toHexString(value));
     }
 
     @Override
@@ -249,7 +284,8 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         database.deleteBatch(keys);
         long t2 = System.nanoTime();
 
-        LOG.debug(database.toString() + " deleteBatch(" + keys.size() + ") in " + (t2 - t1) + " ns.");
+        LOG.debug(
+                database.toString() + " deleteBatch(" + keys.size() + ") in " + (t2 - t1) + " ns.");
     }
 
     @Override
@@ -259,5 +295,39 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
         long t2 = System.nanoTime();
 
         LOG.debug(database.toString() + " drop() in " + (t2 - t1) + " ns.");
+    }
+
+    @Override
+    public long deleteAllExcept(IByteArrayKeyValueStore db) {
+        long t1 = System.nanoTime();
+        long out = database.deleteAllExcept(db);
+        long t2 = System.nanoTime();
+
+        LOG.debug(
+                database.toString()
+                        + " deleteAllExcept("
+                        + db.toString()
+                        + ") in "
+                        + (t2 - t1)
+                        + " ns.");
+        return out;
+    }
+
+    @Override
+    public long deleteAllExcept(IByteArrayKeyValueStore db, long limit) {
+        long t1 = System.nanoTime();
+        long out = database.deleteAllExcept(db, limit);
+        long t2 = System.nanoTime();
+
+        LOG.debug(
+                database.toString()
+                        + " deleteAllExcept("
+                        + db.toString()
+                        + ", "
+                        + limit
+                        + ") in "
+                        + (t2 - t1)
+                        + " ns.");
+        return out;
     }
 }

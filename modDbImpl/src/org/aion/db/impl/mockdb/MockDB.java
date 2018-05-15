@@ -1,9 +1,37 @@
+/* ******************************************************************************
+ * Copyright (c) 2017-2018 Aion foundation.
+ *
+ *     This file is part of the aion network project.
+ *
+ *     The aion network project is free software: you can redistribute it
+ *     and/or modify it under the terms of the GNU General Public License
+ *     as published by the Free Software Foundation, either version 3 of
+ *     the License, or any later version.
+ *
+ *     The aion network project is distributed in the hope that it will
+ *     be useful, but WITHOUT ANY WARRANTY; without even the implied
+ *     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *     See the GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with the aion network project source files.
+ *     If not, see <https://www.gnu.org/licenses/>.
+ *
+ *     The aion network project leverages useful source code from other
+ *     open source projects. We greatly appreciate the effort that was
+ *     invested in these projects and we thank the individual contributors
+ *     for their work. For provenance information and contributors
+ *     please see <https://github.com/aionnetwork/aion/wiki/Contributors>.
+ *
+ * Contributors to the aion source files in decreasing order of code volume:
+ *     Aion foundation.
+ ******************************************************************************/
 package org.aion.db.impl.mockdb;
 
+import java.util.*;
+import org.aion.base.db.IByteArrayKeyValueStore;
 import org.aion.base.util.ByteArrayWrapper;
 import org.aion.db.impl.AbstractDB;
-
-import java.util.*;
 
 public class MockDB extends AbstractDB {
 
@@ -18,7 +46,8 @@ public class MockDB extends AbstractDB {
         return this.getClass().getSimpleName() + ":<name=" + name + ">";
     }
 
-    // IDatabase functionality -----------------------------------------------------------------------------------------
+    // IDatabase functionality
+    // -----------------------------------------------------------------------------------------
 
     @Override
     public boolean open() {
@@ -68,7 +97,8 @@ public class MockDB extends AbstractDB {
         return -1L;
     }
 
-    // IKeyValueStore functionality ------------------------------------------------------------------------------------
+    // IKeyValueStore functionality
+    // ------------------------------------------------------------------------------------
 
     @Override
     public boolean isEmpty() {
@@ -122,15 +152,17 @@ public class MockDB extends AbstractDB {
 
         try {
             // simply do a put, because setting a kv pair to null is same as delete
-            inputMap.forEach((key, value) -> {
-                if (value == null) {
-                    kv.remove(ByteArrayWrapper.wrap(key));
-                } else {
-                    kv.put(ByteArrayWrapper.wrap(key), value);
-                }
-            });
+            inputMap.forEach(
+                    (key, value) -> {
+                        if (value == null) {
+                            kv.remove(ByteArrayWrapper.wrap(key));
+                        } else {
+                            kv.put(ByteArrayWrapper.wrap(key), value);
+                        }
+                    });
         } catch (Exception e) {
-            LOG.error("Unable to execute batch put/update operation on " + this.toString() + ".", e);
+            LOG.error(
+                    "Unable to execute batch put/update operation on " + this.toString() + ".", e);
         }
     }
 
@@ -164,7 +196,81 @@ public class MockDB extends AbstractDB {
         kv.clear();
     }
 
-    // AbstractDB functionality ----------------------------------------------------------------------------------------
+    @Override
+    public long deleteAllExcept(IByteArrayKeyValueStore _db) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(
+                    "Deleting all keys from {} that are not in {}.",
+                    this.toString(),
+                    _db.toString());
+        }
+
+        long delCount = 0;
+
+        try {
+            Iterator<ByteArrayWrapper> iter = kv.keySet().iterator();
+
+            // extract keys
+            while (iter.hasNext()) {
+                ByteArrayWrapper key = iter.next();
+                if (!_db.get(key.getData()).isPresent()) {
+                    kv.remove(key);
+                    delCount++;
+                }
+            }
+        } catch (Exception e) {
+            LOG.error(
+                    "Unable to delete all keys from "
+                            + this.toString()
+                            + " that are not in "
+                            + _db.toString()
+                            + " due to: ",
+                    e);
+        }
+
+        return delCount;
+    }
+
+    @Override
+    public long deleteAllExcept(IByteArrayKeyValueStore _db, long limit) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(
+                    "Deleting all keys from {} that are not in {} with explore limit {}.",
+                    this.toString(),
+                    _db.toString(),
+                    limit);
+        }
+
+        long delCount = 0, viewCount = 0;
+
+        try {
+            Iterator<ByteArrayWrapper> iter = kv.keySet().iterator();
+
+            // extract keys
+            while (iter.hasNext() && viewCount <= limit) {
+                ByteArrayWrapper key = iter.next();
+                if (!_db.get(key.getData()).isPresent()) {
+                    kv.remove(key);
+                    delCount++;
+                }
+                viewCount++;
+            }
+        } catch (Exception e) {
+            LOG.error(
+                    "Unable to delete all keys from "
+                            + this.toString()
+                            + " that are not in "
+                            + _db.toString()
+                            + " with explore limit "
+                            + limit
+                            + " due to: ",
+                    e);
+        }
+
+        return delCount;
+    }
+    // AbstractDB functionality
+    // ----------------------------------------------------------------------------------------
 
     public boolean commitCache(Map<ByteArrayWrapper, byte[]> cache) {
         boolean success = false;
@@ -173,13 +279,14 @@ public class MockDB extends AbstractDB {
             check();
 
             // simply do a put, because setting a kv pair to null is same as delete
-            cache.forEach((key, value) -> {
-                if (value == null) {
-                    kv.remove(key);
-                } else {
-                    kv.put(key, value);
-                }
-            });
+            cache.forEach(
+                    (key, value) -> {
+                        if (value == null) {
+                            kv.remove(key);
+                        } else {
+                            kv.put(key, value);
+                        }
+                    });
 
             success = true;
         } catch (Exception e) {

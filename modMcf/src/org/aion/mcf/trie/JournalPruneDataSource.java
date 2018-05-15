@@ -385,6 +385,54 @@ public class JournalPruneDataSource implements IByteArrayKeyValueStore {
         }
     }
 
+    /**
+     * @inheritDoc
+     * @implNote The typical behaviour of this class is not to push delete operations to the source
+     *     until pruning is called. This function does not follow the typical behaviour and directly
+     *     applies deletions on the source data store.
+     */
+    @Override
+    public long deleteAllExcept(IByteArrayKeyValueStore db) {
+        lock.writeLock().lock();
+
+        try {
+            return src.deleteAllExcept(db);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw e;
+            } else {
+                LOG.error("Could not delete keys from database due to ", e);
+                return -1L;
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * @inheritDoc
+     * @implNote The typical behaviour of this class is not to push delete operations to the source
+     *     until pruning is called. This function does not follow the typical behaviour and directly
+     *     applies deletions on the source data store.
+     */
+    @Override
+    public long deleteAllExcept(IByteArrayKeyValueStore db, long limit) {
+        lock.writeLock().lock();
+
+        try {
+            return src.deleteAllExcept(db, limit);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw e;
+            } else {
+                LOG.error("Could not delete keys from database due to ", e);
+                return -1L;
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
     @Override
     public boolean isEmpty() {
         lock.readLock().lock();

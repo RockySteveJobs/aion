@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2017-2018 Aion foundation.
  *
  *     This file is part of the aion network project.
@@ -28,22 +28,23 @@
  ******************************************************************************/
 package org.aion.db.generic;
 
-import org.aion.base.db.IByteArrayKeyValueDatabase;
-import org.aion.log.AionLoggerFactory;
-import org.aion.log.LogEnum;
-import org.slf4j.Logger;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.aion.base.db.IByteArrayKeyValueDatabase;
+import org.aion.base.db.IByteArrayKeyValueStore;
+import org.aion.log.AionLoggerFactory;
+import org.aion.log.LogEnum;
+import org.slf4j.Logger;
 
 /**
  * Implements locking functionality for a generic database implementation.
- * <p>
- * Allows more flexibility in using the database implementations, by separating locking form database usage.
+ *
+ * <p>Allows more flexibility in using the database implementations, by separating locking form
+ * database usage.
  *
  * @author Alexandra Roatis
  */
@@ -66,7 +67,8 @@ public class LockedDatabase implements IByteArrayKeyValueDatabase {
         return this.getClass().getSimpleName() + " over " + database.toString();
     }
 
-    // IDatabase functionality -----------------------------------------------------------------------------------------
+    // IDatabase functionality
+    // -----------------------------------------------------------------------------------------
 
     @Override
     public boolean open() {
@@ -205,7 +207,8 @@ public class LockedDatabase implements IByteArrayKeyValueDatabase {
         }
     }
 
-    // IKeyValueStore functionality ------------------------------------------------------------------------------------
+    // IKeyValueStore functionality
+    // ------------------------------------------------------------------------------------
 
     @Override
     public boolean isEmpty() {
@@ -378,6 +381,46 @@ public class LockedDatabase implements IByteArrayKeyValueDatabase {
                 throw e;
             } else {
                 LOG.error("Could not drop database due to ", e);
+            }
+        } finally {
+            // releasing write lock
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public long deleteAllExcept(IByteArrayKeyValueStore db) {
+        // acquire write lock
+        lock.writeLock().lock();
+
+        try {
+            return database.deleteAllExcept(db);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw e;
+            } else {
+                LOG.error("Could not delete keys from database due to ", e);
+                return -1L;
+            }
+        } finally {
+            // releasing write lock
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public long deleteAllExcept(IByteArrayKeyValueStore db, long limit) {
+        // acquire write lock
+        lock.writeLock().lock();
+
+        try {
+            return database.deleteAllExcept(db, limit);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw e;
+            } else {
+                LOG.error("Could not delete keys from database due to ", e);
+                return -1L;
             }
         } finally {
             // releasing write lock
