@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2017-2018 Aion foundation.
  *
  *     This file is part of the aion network project.
@@ -25,51 +25,29 @@
  *
  * Contributors to the aion source files in decreasing order of code volume:
  *     Aion foundation.
- *     <ether.camp> team through the ethereumJ library.
- *     Ether.Camp Inc. (US) team through Ethereum Harmony.
- *     John Tromp through the Equihash solver.
- *     Samuel Neves through the BLAKE2 implementation.
- *     Zcash project team.
- *     Bitcoinj team.
  ******************************************************************************/
-package org.aion.mcf.trie;
+package org.aion.mcf.trie.scan;
 
 import org.aion.base.db.IByteArrayKeyValueDatabase;
-import org.aion.base.db.IByteArrayKeyValueStore;
+import org.aion.rlp.Value;
 
-import static org.aion.base.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.aion.crypto.HashUtil.h256;
+/**
+ * @author Alexandra Roatis
+ */
+public class ExtractToDatabase implements ScanAction {
 
-public class SecureTrie extends TrieImpl implements Trie {
+    // only the keys matter
+    byte[] dummy_value = new byte[] { 0 };
+    IByteArrayKeyValueDatabase db;
+    public long count = 0;
 
-    public SecureTrie(IByteArrayKeyValueStore db) {
-        this(db, "");
-    }
-
-    public SecureTrie(IByteArrayKeyValueStore db, Object root) {
-        super(db, root);
-    }
-
-    public SecureTrie(IByteArrayKeyValueStore db, IByteArrayKeyValueDatabase archive) {
-        super(db, "", archive);
-    }
-
-    public SecureTrie(IByteArrayKeyValueStore db, Object root, IByteArrayKeyValueDatabase archive) {
-        super(db, root, archive);
+    public ExtractToDatabase(IByteArrayKeyValueDatabase _db) {
+        this.db = _db;
     }
 
     @Override
-    public byte[] get(byte[] key) {
-        return super.get(h256(key));
-    }
-
-    @Override
-    public void update(byte[] key, byte[] value) {
-        super.update(h256(key), value);
-    }
-
-    @Override
-    public void delete(byte[] key) {
-        this.update(key, EMPTY_BYTE_ARRAY);
+    public void doOnNode(byte[] hash, Value node) {
+        db.put(hash, dummy_value);
+        count++;
     }
 }

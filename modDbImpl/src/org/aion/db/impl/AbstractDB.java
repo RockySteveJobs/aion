@@ -34,6 +34,12 @@
  ******************************************************************************/
 package org.aion.db.impl;
 
+import org.aion.base.db.IByteArrayKeyValueDatabase;
+import org.aion.base.util.ByteArrayWrapper;
+import org.aion.log.AionLoggerFactory;
+import org.aion.log.LogEnum;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,11 +48,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.aion.base.db.IByteArrayKeyValueDatabase;
-import org.aion.base.util.ByteArrayWrapper;
-import org.aion.log.AionLoggerFactory;
-import org.aion.log.LogEnum;
-import org.slf4j.Logger;
 
 /**
  * Common functionality for database implementations.
@@ -71,12 +72,15 @@ public abstract class AbstractDB implements IByteArrayKeyValueDatabase {
         this.name = name;
     }
 
-    protected AbstractDB(
-            String name, String path, boolean enableDbCache, boolean enableDbCompression) {
+    protected AbstractDB(String name, String path) {
         this(name);
 
         Objects.requireNonNull(path, "The database path cannot be null.");
         this.path = new File(path, name).getAbsolutePath();
+    }
+
+    protected AbstractDB(String name, String path, boolean enableDbCache, boolean enableDbCompression) {
+        this(name, path);
 
         this.enableDbCache = enableDbCache;
         this.enableDbCompression = enableDbCompression;

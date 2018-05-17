@@ -20,15 +20,13 @@
  *******************************************************************************/
 package org.aion.mcf.trie;
 
+import org.aion.base.db.IByteArrayKeyValueDatabase;
 import org.aion.base.db.IByteArrayKeyValueStore;
 import org.aion.base.util.ByteArrayWrapper;
 import org.aion.base.util.FastByteComparisons;
 import org.aion.base.util.Hex;
 import org.aion.crypto.HashUtil;
-import org.aion.mcf.trie.scan.CollectFullSetOfNodes;
-import org.aion.mcf.trie.scan.CountNodes;
-import org.aion.mcf.trie.scan.ScanAction;
-import org.aion.mcf.trie.scan.TraceAllNodes;
+import org.aion.mcf.trie.scan.*;
 import org.aion.rlp.RLP;
 import org.aion.rlp.RLPItem;
 import org.aion.rlp.RLPList;
@@ -85,6 +83,7 @@ public class TrieImpl implements Trie {
     private Object prevRoot;
     private Object root;
     private Cache cache;
+    private IByteArrayKeyValueDatabase archive;
 
     private boolean pruningEnabled;
 
@@ -95,7 +94,13 @@ public class TrieImpl implements Trie {
     public TrieImpl(IByteArrayKeyValueStore db, Object root) {
         this.cache = new Cache(db);
         this.root = root;
+        this.archive = null;
         this.prevRoot = root;
+    }
+
+    public TrieImpl(IByteArrayKeyValueStore db, Object root, IByteArrayKeyValueDatabase archive) {
+        this(db, root);
+        this.archive = archive;
     }
 
     public TrieIterator getIterator() {
@@ -638,6 +643,54 @@ public class TrieImpl implements Trie {
         }
     }
 
+    /**
+     * Scans the trie similar to {@link #scanTreeLoop(byte[], ScanAction)}, but stops once a state is found in the given database.
+     * @param hash state root
+     * @param scanAction action to perform on each node
+     * @param db database containing keys that need not be explored
+     */
+    public void scanTreeDiffLoop(byte[] hash, ScanAction scanAction, IByteArrayKeyValueDatabase db) {
+
+        ArrayList<byte[]> hashes = new ArrayList<>();
+        hashes.add(hash);
+
+        while (!hashes.isEmpty()) {
+            synchronized (cache) {
+                byte[] myHash = hashes.remove(0);
+                Value node = this.getCache().get(myHash);
+                if (node == null) {
+                    System.out.println("Skipped key. Not found: " + Hex.toHexString(myHash));
+                } else {
+                    if (node.isList()) {
+                        List<Object> siblings = node.asList();
+                        if (siblings.size() == PAIR_SIZE) {
+                            Value val = new Value(siblings.get(1));
+                            if (val.isHashCode() && !hasTerminator((byte[]) siblings.get(0))) {
+                                // scanTree(val.asBytes(), scanAction);
+                                byte[] valBytes = val.asBytes();
+                                if (!db.get(valBytes).isPresent()) {
+                                    hashes.add(valBytes);
+                                }
+                            }
+                        } else {
+                            for (int j = 0; j < LIST_SIZE; ++j) {
+                                Value val = new Value(siblings.get(j));
+                                if (val.isHashCode()) {
+                                    // scanTree(val.asBytes(), scanAction);
+                                    byte[] valBytes = val.asBytes();
+                                    if (!db.get(valBytes).isPresent()) {
+                                        hashes.add(valBytes);
+                                    }
+                                }
+                            }
+                        }
+                        scanAction.doOnNode(myHash, node);
+                    }
+                }
+            }
+        }
+    }
+
     public void deserialize(byte[] data) {
         synchronized (cache) {
             RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
@@ -803,6 +856,49 @@ public class TrieImpl implements Trie {
                 return false;
             }
             return true;
+        }
+    }
+
+    @Override
+    public long saveFullStateToDatabase(byte[] stateRoot, IByteArrayKeyValueDatabase db) {
+        ExtractToDatabase traceAction = new ExtractToDatabase(db);
+        traceTrie(stateRoot, traceAction);
+        return traceAction.count;
+    }
+
+    private void traceDiffTrie(byte[] stateRoot, ScanAction action, IByteArrayKeyValueDatabase db) {
+        synchronized (cache) {
+            Value value = new Value(stateRoot);
+
+            if (value.isHashCode() && !db.get(value.asBytes()).isPresent()) {
+                scanTreeDiffLoop(stateRoot, action, db);
+            } else {
+                action.doOnNode(stateRoot, value);
+            }
+        }
+    }
+
+    @Override
+    public long saveDiffStateToDatabase(byte[] stateRoot, IByteArrayKeyValueDatabase db) {
+        ExtractToDatabase traceAction = new ExtractToDatabase(db);
+        traceDiffTrie(stateRoot, traceAction, db);
+        return traceAction.count;
+    }
+
+    @Override
+    public void pruneAllExcept(IByteArrayKeyValueDatabase db) {
+        synchronized (cache) {
+            // delete everything from database
+            long deleted = cache.getDb().deleteAllExcept(db);
+            System.out.println("Deleted key #" + deleted + " from " + cache.getDb().toString());
+
+            while (deleted > 0) {
+                deleted = cache.getDb().deleteAllExcept(db);
+                System.out.println("Deleted key #" + deleted + " from " + cache.getDb().toString());
+            }
+
+            // clean swap database
+            db.drop();
         }
     }
 

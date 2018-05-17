@@ -170,6 +170,16 @@ public class Cli {
                         RecoveryUtils.printStateTrieDump(level);
                     }
                     break;
+                case "-p":
+                    System.out.println("Pruning state ....");
+                    RecoveryUtils.archiveState(Integer.parseInt(args[1]));
+                    System.out.println("Finished pruning state.");
+                    break;
+                case "--archive-states": {
+                    // takes multiple block numbers
+                    RecoveryUtils.archiveStates(128, Integer.parseInt(args[1]));
+                    break;
+                }
                 case "--db-compact":
                     RecoveryUtils.dbCompact();
                     break;
@@ -209,6 +219,7 @@ public class Cli {
             System.out.println("");
         } catch (Throwable e) {
             System.out.println("");
+            e.printStackTrace();
             return 1;
         }
 

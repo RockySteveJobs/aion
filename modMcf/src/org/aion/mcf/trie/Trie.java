@@ -20,6 +20,8 @@
  *******************************************************************************/
 package org.aion.mcf.trie;
 
+import org.aion.base.db.IByteArrayKeyValueDatabase;
+
 /**
  * Trie interface for the main data structure in Ethereum
  * which is used to store both the account state and storage of each account.
@@ -96,4 +98,8 @@ public interface Trie {
 
     boolean validate();
 
+    long saveFullStateToDatabase(byte[] stateRoot, IByteArrayKeyValueDatabase db);
+    long saveDiffStateToDatabase(byte[] stateRoot, IByteArrayKeyValueDatabase db);
+
+    void pruneAllExcept(IByteArrayKeyValueDatabase db);
 }
