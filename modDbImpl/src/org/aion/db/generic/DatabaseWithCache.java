@@ -514,6 +514,13 @@ public class DatabaseWithCache implements IByteArrayKeyValueDatabase {
         this.database.drop();
     }
 
+    @Override
+    public void purge() {
+        this.loadingCache.invalidateAll();
+        this.dirtyEntries.clear();
+        this.database.purge();
+    }
+
     /**
      * Pushes all the dirty key-value pairs to the database. Does not make any guarantees with
      * respect to their continued / discontinued storage in the cache.

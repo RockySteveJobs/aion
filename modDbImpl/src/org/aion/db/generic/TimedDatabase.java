@@ -298,6 +298,15 @@ public class TimedDatabase implements IByteArrayKeyValueDatabase {
     }
 
     @Override
+    public void purge() {
+        long t1 = System.nanoTime();
+        database.purge();
+        long t2 = System.nanoTime();
+
+        LOG.debug(database.toString() + " purge() in " + (t2 - t1) + " ns.");
+    }
+
+    @Override
     public long deleteAllExcept(IByteArrayKeyValueStore db) {
         long t1 = System.nanoTime();
         long out = database.deleteAllExcept(db);

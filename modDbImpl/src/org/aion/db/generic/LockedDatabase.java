@@ -389,6 +389,25 @@ public class LockedDatabase implements IByteArrayKeyValueDatabase {
     }
 
     @Override
+    public void purge() {
+        // acquire write lock
+        lock.writeLock().lock();
+
+        try {
+            database.purge();
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw e;
+            } else {
+                LOG.error("Could not drop database due to ", e);
+            }
+        } finally {
+            // releasing write lock
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
     public long deleteAllExcept(IByteArrayKeyValueStore db) {
         // acquire write lock
         lock.writeLock().lock();
